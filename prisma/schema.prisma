@@ -55,6 +55,16 @@ model User {
     image         String?
     accounts      Account[]
     sessions      Session[]
+    musicApps     MusicApp[]
+}
+
+model MusicApp {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    name      String
+    url       String
+    userId    String
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {

@@ -5,6 +5,7 @@ import {
   type DefaultSession,
 } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import SpotifyProvider from "next-auth/providers/spotify";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { env } from "~/env.mjs";
 import { prisma } from "~/server/db";
@@ -32,9 +33,14 @@ declare module "next-auth" {
 
 /**
  * Options for NextAuth.js used to configure adapters, providers, callbacks, etc.
- *
- * @see https://next-auth.js.org/configuration/options
- */
+*
+* @see https://next-auth.js.org/configuration/options
+*/
+
+
+const scopeSpotify = 'user-read-private user-read-email user-read-playback-state user-modify-playback-state user-read-currently-playing user-read-recently-played';
+
+
 export const authOptions: NextAuthOptions = {
   callbacks: {
     session({ session, user }) {
@@ -45,11 +51,19 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
+
   adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
       clientId: env.SECRET_GOOGLE_CLIENT_ID,
       clientSecret: env.SECRET_GOOGLE_CLIENT_SECRET,
+    }),
+    SpotifyProvider({
+      clientId: env.SECRET_SPOTIFY_CLIENT_ID,
+      clientSecret: env.SECRET_SPOTIFY_CLIENT_SECRET,
+      authorization:
+        `https://accounts.spotify.com/authorize?scope=${scopeSpotify}`,
+      allowDangerousEmailAccountLinking: true,
     }),
     /**
      * ...add more providers here.

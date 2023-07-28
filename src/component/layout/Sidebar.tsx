@@ -1,32 +1,66 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import classNames from "classnames";
 import Link from "next/link";
 import Image from "next/image";
-import { defaultNavItems, NavItem } from "./defaultNavItems";
+import { defaultNavItems, NavItem, defaultNavItems2 ,NavItem2 } from "./defaultNavItems";
 import {
   ChevronDoubleLeftIcon,
   ChevronDoubleRightIcon,
 } from "@heroicons/react/24/outline";
 
-import { signIn, signOut, useSession } from "next-auth/react";
+import { api } from "~/utils/api";
+
+import { SessionProvider, signIn, signOut, useSession } from "next-auth/react";
 
 // add NavItem prop to component prop
 type Props = {
   collapsed: boolean;
   navItems?: NavItem[];
+  navItems2?: NavItem2[];
   setCollapsed(collapsed: boolean): void;
   shown: boolean;
 };
+
+//TODO: backend DELETE
+const getReturnedParamsFromSpotifyAuth = (hash: string) => {
+  const stringAfterHashtag = hash.substring(1);
+  const paramsInUrl = stringAfterHashtag.split("&");
+  const paramsSplitUp = paramsInUrl.reduce((accumulater: any, currentValue) => {
+    console.log(`currentValue: ${currentValue}`)
+    const [key, value] = currentValue.split("=");
+    if(key === undefined) return console.log(`key is undefined`);
+    accumulater[key] = value;
+    return accumulater;
+  }, {});
+  return paramsSplitUp;
+}
+
 const Sidebar = ({
   collapsed,
   navItems = defaultNavItems,
+  navItems2 = defaultNavItems2,
   shown,
   setCollapsed,
 }: Props) => {
   const Icon = collapsed ? ChevronDoubleRightIcon : ChevronDoubleLeftIcon;
 
+  const providers = api.appsConnected.getProviders.useQuery();
+
   const session = useSession();
   const isLoggedIn = !session.data;
+
+  const handleLogin = (url: string) => {
+    window.location.href = url;
+    // console.log(`login spotify: ${url}`)
+  };
+
+  // TODO: HOW TO SAVE IT IN THE DATABASE?
+  useEffect(() => {
+    if(window.location.hash) {
+      const { access_token, expires_in, token_type } = getReturnedParamsFromSpotifyAuth(window.location.hash);
+    }
+  }
+  ,[])
 
   return (
     <div
@@ -53,7 +87,7 @@ const Sidebar = ({
             "py-4 justify-center": collapsed,
           })}
         >
-          {!collapsed && <span className="whitespace-nowrap">My Logo</span>}
+          {!collapsed && <span className="whitespace-nowrap">Toni Music</span>}
           <button
             className="grid place-content-center hover:bg-indigo-800 w-10 h-10 rounded-full opacity-0 md:opacity-100"
             onClick={() => setCollapsed(!collapsed)}
@@ -77,7 +111,7 @@ const Sidebar = ({
                     "rounded-md p-2 mx-3 gap-4 ": !collapsed,
                     "rounded-full p-2 mx-3 w-10 h-10": collapsed,
                   })}
-                >
+                  >
                   <Link href={item.href} className="flex gap-2">
                     {item.icon} <span>{!collapsed && item.label}</span>
                   </Link>
@@ -85,6 +119,42 @@ const Sidebar = ({
               );
             })}
           </ul>
+          <div className="flex flex-col">
+            {navItems2.map((item, index) => {
+              return (
+                providers.data?.map((provider) => {
+                  if(provider.provider === item.label) {
+                    <button
+                      key={index}
+                      className={classNames({
+                        "mb-4  rounded text-xl bg-red-200 px-4 py-2 text-gray-800 hover:bg-red-600 hover:text-gray-100": true, //colors
+                        "transition-colors duration-300": true, //animation
+                        "rounded-md p-2 mx-3 gap-4 ": !collapsed,
+                        "rounded-full p-2 mx-3 w-10 h-10": collapsed,
+                      })}
+                      onClick={()=>handleLogin(item.href)}
+                      >
+                      <span>{!collapsed && item.label}</span>
+                    </button>
+                  }
+                  
+                  
+                }),
+                <button
+                  key={index}
+                  className={classNames({
+                    "mb-4  rounded text-xl bg-green-200 px-4 py-2 text-gray-800 hover:bg-green-600 hover:text-gray-100": true, //colors
+                    "transition-colors duration-300": true, //animation
+                    "rounded-md p-2 mx-3 gap-4 ": !collapsed,
+                    "rounded-full p-2 mx-3 w-10 h-10": collapsed,
+                  })}
+                  onClick={()=>handleLogin(item.href)}
+                  >
+                  <span>{!collapsed && item.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </nav>
         <div
           className={classNames({
